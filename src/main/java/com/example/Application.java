@@ -13,35 +13,41 @@ import java.sql.Statement;
 @SpringBootApplication
 public class Application {
 
-    public static void main(String[] args)
-    {
+    private static String[] appArgs; // Store command-line arguments
+
+    public static void main(String[] args) {
+        appArgs = args; // Save args for later use
         SpringApplication.run(Application.class, args);
     }
 
     @PostConstruct
-    public void init()
-    {
+    public void init() {
         Logger log = LoggerFactory.getLogger(Application.class);
         log.info("Java app started");
 
-        String userInput = args[0];  // User input that can be manipulated
-        try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb", "user", "password");
-            Statement statement = connection.createStatement();
+        if (appArgs == null || appArgs.length == 0) {
+            log.error("No user input provided. Exiting.");
+            return;
+        }
+
+        String userInput = appArgs[0];  // User input from command-line arguments
+        log.info("User input: " + userInput);
+
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb", "user", "password");
+             Statement statement = connection.createStatement()) {
 
             // Vulnerable SQL query construction
             String query = "SELECT * FROM users WHERE username = '" + userInput + "'";
-            ResultSet resultSet = statement.executeQuery(query);
+            log.info("Executing query: " + query);
 
+            ResultSet resultSet = statement.executeQuery(query);
             while (resultSet.next()) {
-                System.out.println("Username: " + resultSet.getString("username"));
+                log.info("Username: " + resultSet.getString("username"));
             }
 
             resultSet.close();
-            statement.close();
-            connection.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("An error occurred while executing the SQL query: ", e);
         }
     }
 
