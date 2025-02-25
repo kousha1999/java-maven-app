@@ -2,7 +2,9 @@ def gv
 
 pipeline {
 	agent any
-	
+	environment {
+		SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
+	}
 	tools {
 		// maven name in Jenkins configuration
 		maven "maven-3.9.9"
@@ -22,6 +24,12 @@ pipeline {
 					gv.buildJar()
 				}
 			}
+		}
+		stage('Semgrep-Scan') {
+        		steps {
+          			sh 'pip3 install semgrep'
+          			sh 'semgrep ci'
+      			}
 		}
 		stage("build image"){
 			steps{
